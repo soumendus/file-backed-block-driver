@@ -50,7 +50,8 @@
 
 #define __bio_kunmap_atomic(addr)	kunmap_atomic(addr)
 
-#define NO_SECTORS 171798464
+//#define NO_SECTORS 171798464
+#define NO_SECTORS 536870912
 #define KERNEL_SECTOR_SIZE 512
 
 static int foo_major_nr;
@@ -102,7 +103,7 @@ static int foo_transfer(struct foo_dev *dev, unsigned
 	unsigned long len_r = 0;
 	unsigned long len_w = 0;
 
-        if ((offset + nbytes) > dev->size) {
+        if ((offset + nbytes) > dev->size * KERNEL_SECTOR_SIZE) {
                 printk (KERN_NOTICE "Beyond-end write (%ld %ld)\n",
                          offset, nbytes);
                 return 1;
@@ -213,13 +214,12 @@ static struct foo_dev* foo_alloc(int i)
 	struct foo_dev *dev;
 	int which = 0;
 	unsigned long no_sectors = NO_SECTORS;
-	unsigned int sector_size = KERNEL_SECTOR_SIZE;
 
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
         if (!dev)
                 goto out;
 
-	dev->size = no_sectors * sector_size;
+	dev->size = no_sectors;
 	foo_size = dev->size;
 	dev->foo_backing_file = filp_open("/root/foo", O_RDWR|O_LARGEFILE|O_CREAT, 0);
 	if(IS_ERR(dev->foo_backing_file)) {
@@ -255,7 +255,7 @@ static struct foo_dev* foo_alloc(int i)
         disk->private_data      = dev;
         disk->flags             = GENHD_FL_EXT_DEVT;
 	snprintf(dev->gd->disk_name, DISK_NAME_LEN, "foo%c", which + '0');
-	set_capacity(disk, no_sectors * sector_size);
+	set_capacity(disk, no_sectors);
         dev->queue->backing_dev_info->capabilities |= BDI_CAP_SYNCHRONOUS_IO;
 
         /* Tell the block layer that this is not a rotational device */
