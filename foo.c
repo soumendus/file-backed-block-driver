@@ -43,11 +43,6 @@
  * We can tweak our hardware sector size, but the kernel talks to us
  * in terms of small sectors, always.
  */
-#define KERNEL_SECTOR_SIZE	512
-
-#define WR true
-#define RD false
-
 
 #define __bio_kmap_atomic(bio, iter)				\
 	(kmap_atomic(bio_iter_iovec((bio), (iter)).bv_page) +	\
@@ -55,7 +50,10 @@
 
 #define __bio_kunmap_atomic(addr)	kunmap_atomic(addr)
 
+#define NO_SECTORS 171798464
+#define KERNEL_SECTOR_SIZE 512
 
+static int foo_major_nr;
 /*
  * The internal representation of our foo device.
  */
@@ -192,8 +190,6 @@ static struct block_device_operations foo_ops = {
 /*
  * And now the modules code and kernel interface.
  */
-#define NO_SECTORS 171798464
-#define KERNEL_SECTOR_SIZE 512
 static int max_part = 0;
 static int foo_major = 0;
 module_param(foo_major, int, 0);
@@ -283,10 +279,10 @@ out:
 static int __init foo_init(void)
 {
         struct foo_dev *dev;
-	int f_major = 0;
+	int err = 0;
 
-        f_major = register_blkdev(foo_major, "foo");
-        if (f_major <= 0) {
+        err = foo_major_nr = register_blkdev(foo_major, "foo");
+        if (err <= 0) {
                 printk(KERN_WARNING "foo: unable to get major number\n");
                 return -EBUSY;
         }
@@ -315,7 +311,8 @@ out_free:
 static void __exit foo_exit(void)
 {
 	foo_free(foo_device);
-	unregister_blkdev(foo_major, "foo");
+	unregister_blkdev(foo_major_nr, "foo");
+        printk("foo: module unloaded !!!\n");
 }
 	
 module_init(foo_init);
