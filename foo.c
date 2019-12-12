@@ -50,7 +50,6 @@
 
 #define __bio_kunmap_atomic(addr)	kunmap_atomic(addr)
 
-//#define NO_SECTORS 171798464
 #define NO_SECTORS 536870912
 #define KERNEL_SECTOR_SIZE 512
 
@@ -60,7 +59,7 @@ static int foo_major_nr;
  */
 struct foo_dev {
         unsigned long size;             /* foo_device size in sectors */
-	struct file *foo_backing_file;
+	struct file *foo_backing_file;  /* Device backing storage which is a file */
         spinlock_t lock;                /* For mutual exclusion */
         struct request_queue *queue;    /* The device request queue */
         struct gendisk *gd;             /* The gendisk structure */
@@ -236,12 +235,6 @@ static struct foo_dev* foo_alloc(int i)
 	}
 	blk_queue_make_request(dev->queue, foo_make_request);
 	blk_queue_max_hw_sectors(dev->queue, NO_SECTORS);
-
-	/* 
-	 * This function is no longer available in Linux 2.6.32.
-  	 * A possible replacement is blk_queue_physical_block_size()
-	 * blk_queue_hardsect_size(dev->queue, hardsect_size); 
-	 */ 
 
 	dev->queue->queuedata = dev;
 	blk_queue_physical_block_size(dev->queue, 512);
