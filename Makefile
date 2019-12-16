@@ -16,7 +16,7 @@ ccflags-y += -I..
 ifneq ($(KERNELRELEASE),)
 # call from kernel build system
 
-obj-m	:= foo.o
+obj-m	:= wslld.o
 
 else
 
