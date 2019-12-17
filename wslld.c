@@ -1,7 +1,7 @@
 
 // SPDX-License-Identifier: GPL-2.0
 /*
- * wslld.c: Works Somewhat LIke Loop Device of Linux Kernel
+ * wslld.c: Works Somewhat Like Loop Device of Linux Kernel
  *
  * Written by Soumendu Sekhar Satapathy, 6th Dec 2019
  * satapathy.soumendu@gmail.com
