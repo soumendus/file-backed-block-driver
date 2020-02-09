@@ -38,6 +38,33 @@
 #include <linux/buffer_head.h>
 #include <linux/backing-dev.h>
 
+#include <linux/mm.h>
+#include <linux/swap.h> /* struct reclaim_state */
+#include <linux/module.h>
+#include <linux/bit_spinlock.h>
+#include <linux/interrupt.h>
+#include <linux/bitops.h>
+#include <linux/slab.h>
+#include <linux/proc_fs.h>
+#include <linux/notifier.h>
+#include <linux/seq_file.h>
+#include <linux/kasan.h>
+#include <linux/cpu.h>
+#include <linux/cpuset.h>
+#include <linux/mempolicy.h>
+#include <linux/ctype.h>
+#include <linux/debugobjects.h>
+#include <linux/kallsyms.h>
+#include <linux/memory.h>
+#include <linux/math64.h>
+#include <linux/fault-inject.h>
+#include <linux/stacktrace.h>
+#include <linux/prefetch.h>
+#include <linux/memcontrol.h>
+#include <linux/random.h>
+
+#include <trace/events/kmem.h>
+
 
 /*
  * We can tweak our hardware sector size, but the kernel talks to us
@@ -66,6 +93,16 @@ struct wslld_dev {
 };
 
 #define WSLLD_DEV(blk_dev) (blk_dev->bd_disk->private_data)
+
+#if 0
+static int fw_doing_dma(void *arg)
+{
+    if(arg)
+    	memset((char*)arg, 'c', 100);
+
+    return 0;
+}
+#endif
 
 static struct wslld_dev* wslld_device = NULL; 
 
@@ -168,7 +205,7 @@ static int wslld_open(struct block_device *blk_dev, fmode_t mod)
 
 	spin_lock(&dev->lock);
 	// Open the backing file as block storage if not open
-	dev->wslld_backing_file = filp_open("/root/wslld", O_RDWR|O_LARGEFILE|O_CREAT, 0);
+	dev->wslld_backing_file = filp_open("/home/wslld", O_RDWR|O_LARGEFILE|O_CREAT, 0);
 	if (IS_ERR(dev->wslld_backing_file)) {
         	printk(KERN_INFO "Unable to open file\n");
         	return PTR_ERR(dev->wslld_backing_file);
@@ -220,7 +257,7 @@ static struct wslld_dev* wslld_alloc(int i)
 
 	dev->size = no_sectors;
 	wslld_size = dev->size;
-	dev->wslld_backing_file = filp_open("/root/wslld", O_RDWR|O_LARGEFILE|O_CREAT, 0);
+	dev->wslld_backing_file = filp_open("/home/wslld", O_RDWR|O_LARGEFILE|O_CREAT, 0);
 	if(IS_ERR(dev->wslld_backing_file)) {
 		dev->wslld_backing_file = NULL;
 		printk(KERN_NOTICE "Unable to Open the file /root/wslld.\n");
@@ -273,6 +310,10 @@ static int __init wslld_init(void)
 {
         struct wslld_dev *dev;
 	int err = 0;
+#if 0
+	int err1 = 0;
+	struct task_struct *t_dma;
+#endif
 
         err = wslld_major_nr = register_blkdev(wslld_major, "wslld");
         if (err <= 0) {
@@ -289,6 +330,22 @@ static int __init wslld_init(void)
 
 	dev->gd->queue = dev->queue;
         add_disk(dev->gd);
+
+#if 0
+	// similar to su buffers getting allocated
+        char *ptr = kmalloc(100, GFP_KERNEL);
+
+	// This is where the sg buffers are getting un-mapped
+        kfree(ptr);
+
+	t_dma = kthread_run(fw_doing_dma, (void*)ptr, "thread-1");
+        if (IS_ERR(t_dma)) {
+        	printk(KERN_INFO "ERROR: Cannot create thread ts1\n");
+        	err1 = PTR_ERR(t_dma);
+        	t_dma = NULL;
+        	goto out_free;
+    	}
+#endif
 
         printk("wslld: module loaded\n");
         return 0;
