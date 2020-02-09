@@ -95,6 +95,7 @@ struct wslld_dev {
 #define WSLLD_DEV(blk_dev) (blk_dev->bd_disk->private_data)
 
 #if 0
+// This is analogous to a DMA operation
 static int fw_doing_dma(void *arg)
 {
     if(arg)
@@ -332,12 +333,13 @@ static int __init wslld_init(void)
         add_disk(dev->gd);
 
 #if 0
-	// similar to su buffers getting allocated
+	// similar to sg buffers getting allocated
         char *ptr = kmalloc(100, GFP_KERNEL);
 
 	// This is where the sg buffers are getting un-mapped
         kfree(ptr);
 
+	// Asynchronous thread is being scheduled, analogous to a DMA operation
 	t_dma = kthread_run(fw_doing_dma, (void*)ptr, "thread-1");
         if (IS_ERR(t_dma)) {
         	printk(KERN_INFO "ERROR: Cannot create thread ts1\n");
