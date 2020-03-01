@@ -94,17 +94,6 @@ struct wslld_dev {
 
 #define WSLLD_DEV(blk_dev) (blk_dev->bd_disk->private_data)
 
-#if 0
-// This is analogous to a DMA operation
-static int fw_doing_dma(void *arg)
-{
-    if(arg)
-    	memset((char*)arg, 'c', 100);
-
-    return 0;
-}
-#endif
-
 static struct wslld_dev* wslld_device = NULL; 
 
 static void wslld_free(struct wslld_dev *dev)
@@ -311,10 +300,6 @@ static int __init wslld_init(void)
 {
         struct wslld_dev *dev;
 	int err = 0;
-#if 0
-	int err1 = 0;
-	struct task_struct *t_dma;
-#endif
 
         err = wslld_major_nr = register_blkdev(wslld_major, "wslld");
         if (err <= 0) {
@@ -331,23 +316,6 @@ static int __init wslld_init(void)
 
 	dev->gd->queue = dev->queue;
         add_disk(dev->gd);
-
-#if 0
-	// similar to sg buffers getting allocated
-        char *ptr = kmalloc(100, GFP_KERNEL);
-
-	// This is where the sg buffers are getting un-mapped
-        kfree(ptr);
-
-	// Asynchronous thread is being scheduled, analogous to a DMA operation
-	t_dma = kthread_run(fw_doing_dma, (void*)ptr, "thread-1");
-        if (IS_ERR(t_dma)) {
-        	printk(KERN_INFO "ERROR: Cannot create thread ts1\n");
-        	err1 = PTR_ERR(t_dma);
-        	t_dma = NULL;
-        	goto out_free;
-    	}
-#endif
 
         printk("wslld: module loaded\n");
         return 0;
